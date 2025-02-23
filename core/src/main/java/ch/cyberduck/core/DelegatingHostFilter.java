@@ -1,7 +1,7 @@
-package ch.cyberduck.core.auth;
+package ch.cyberduck.core;
 
 /*
- * Copyright (c) 2002-2017 iterate GmbH. All rights reserved.
+ * Copyright (c) 2002-2025 iterate GmbH. All rights reserved.
  * https://cyberduck.io/
  *
  * This program is free software; you can redistribute it and/or modify
@@ -15,15 +15,21 @@ package ch.cyberduck.core.auth;
  * GNU General Public License for more details.
  */
 
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
+public class DelegatingHostFilter implements HostFilter {
 
-public class AWSProfileCredentialsConfigurator extends AWSCredentialsConfigurator {
+    private final HostFilter[] delegates;
 
-    public AWSProfileCredentialsConfigurator() {
-        super(new ProfileCredentialsProvider());
+    public DelegatingHostFilter(final HostFilter... delegates) {
+        this.delegates = delegates;
     }
 
-    public AWSProfileCredentialsConfigurator(final String profile) {
-        super(new ProfileCredentialsProvider(profile));
+    @Override
+    public boolean accept(final Host host) {
+        for(HostFilter delegate : delegates) {
+            if(!delegate.accept(host)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
