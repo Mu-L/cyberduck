@@ -175,9 +175,21 @@ public class KeychainLoginService implements LoginService {
             log.debug("Login failed for {}", session);
             listener.message(LocaleFactory.localizedString("Login failed", "Credentials"));
             final LoginOptions options = new LoginOptions(bookmark.getProtocol());
-            if(this.prompt(bookmark, e.getDetail(), prompt, options)) {
-                // Retry
-                return false;
+            try {
+                if(this.prompt(bookmark, e.getDetail(), prompt, options)) {
+                    // Retry
+                    return false;
+                }
+            }
+            catch(LoginCanceledException c) {
+                // Canceled by user
+                try {
+                    c.initCause(e);
+                }
+                catch(IllegalArgumentException | IllegalStateException r) {
+                    log.warn("Ignore error {} initializing faiulre {} with cause {}", r, e, c);
+                }
+                throw c;
             }
             log.debug("Reset credentials for {}", bookmark);
             // No updated credentials. Nullify input
