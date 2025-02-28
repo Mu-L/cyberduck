@@ -27,7 +27,7 @@ import ch.cyberduck.core.io.StreamListener;
 import ch.cyberduck.core.local.IconService;
 import ch.cyberduck.core.local.IconServiceFactory;
 import ch.cyberduck.core.notification.NotificationService;
-import ch.cyberduck.core.preferences.HostPreferences;
+import ch.cyberduck.core.preferences.HostPreferencesFactory;
 import ch.cyberduck.core.preferences.PreferencesFactory;
 import ch.cyberduck.core.threading.TransferBackgroundActionState;
 import ch.cyberduck.core.transfer.SynchronizingTransferErrorCallback;
@@ -388,7 +388,7 @@ public abstract class AbstractTransferWorker extends TransferWorker<Boolean> {
                         final Session<?> s = borrow(Connection.source);
                         final Session<?> d = borrow(Connection.destination);
                         final IconService.Icon icon;
-                        if(new HostPreferences(s.getHost()).getBoolean(String.format("queue.%s.icon.update", transfer.getType().name()))) {
+                        if(HostPreferencesFactory.get(s.getHost()).getBoolean(String.format("queue.%s.icon.update", transfer.getType().name()))) {
                             icon = IconServiceFactory.iconFor(transfer.getType(),
                                     segment.getRename().local != null ? segment.isSegment() ? segment.getRename().local.getParent() : segment.getRename().local : item.local);
                         }
@@ -427,6 +427,7 @@ public abstract class AbstractTransferWorker extends TransferWorker<Boolean> {
                                         log.debug("Determine status for retry of {}", segment);
                                         final TransferStatus retry;
                                         if(segment.isSegment()) {
+                                            log.debug("Repeat full length with previous transfer status {} ", segment);
                                             // Repeat full length of single segment
                                             retry = segment;
                                             // Subtract already counted bytes
@@ -438,6 +439,7 @@ public abstract class AbstractTransferWorker extends TransferWorker<Boolean> {
                                             retry = resume.prepare(
                                                     segment.getRename().remote != null ? segment.getRename().remote : item.remote,
                                                     segment.getRename().local != null ? segment.getRename().local : item.local, new TransferStatus().exists(true), progress);
+                                            log.debug("Determined new transfer status {}", retry);
                                             // Subtract already counted bytes
                                             counter.recv(retry.getOffset() - counter.getRecv());
                                             counter.sent(retry.getOffset() - counter.getSent());

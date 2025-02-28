@@ -33,7 +33,7 @@ import ch.cyberduck.core.http.HttpSession;
 import ch.cyberduck.core.oauth.OAuth2ErrorResponseInterceptor;
 import ch.cyberduck.core.oauth.OAuth2RequestInterceptor;
 import ch.cyberduck.core.onedrive.features.*;
-import ch.cyberduck.core.preferences.HostPreferences;
+import ch.cyberduck.core.preferences.HostPreferencesFactory;
 import ch.cyberduck.core.proxy.ProxyFinder;
 import ch.cyberduck.core.shared.BufferWriteFeature;
 import ch.cyberduck.core.shared.DefaultHomeFinderService;
@@ -131,8 +131,7 @@ public abstract class GraphSession extends HttpSession<OneDriveAPI> {
     @Override
     protected OneDriveAPI connect(final ProxyFinder proxy, final HostKeyCallback key, final LoginCallback prompt, final CancelCallback cancel) throws HostParserException, ConnectionCanceledException {
         final HttpClientBuilder configuration = builder.build(proxy, this, prompt);
-        authorizationService = new OAuth2RequestInterceptor(
-                builder.build(proxy, this, prompt).build(), host, prompt) {
+        authorizationService = new OAuth2RequestInterceptor(configuration.build(), host, prompt) {
             @Override
             public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
                 if(request.containsHeader(HttpHeaders.AUTHORIZATION)) {
@@ -258,7 +257,7 @@ public abstract class GraphSession extends HttpSession<OneDriveAPI> {
             return (T) new GraphFindFeature(this, fileid);
         }
         if(type == Timestamp.class) {
-            if(new HostPreferences(host).getBoolean("onedrive.timestamp.enable")) {
+            if(HostPreferencesFactory.get(host).getBoolean("onedrive.timestamp.enable")) {
                 return (T) new GraphTimestampFeature(this, fileid);
             }
         }

@@ -24,7 +24,7 @@ import ch.cyberduck.core.exception.BackgroundException;
 import ch.cyberduck.core.exception.UnsupportedException;
 import ch.cyberduck.core.features.Copy;
 import ch.cyberduck.core.io.StreamListener;
-import ch.cyberduck.core.preferences.HostPreferences;
+import ch.cyberduck.core.preferences.HostPreferencesFactory;
 import ch.cyberduck.core.sds.io.swagger.client.ApiException;
 import ch.cyberduck.core.sds.io.swagger.client.api.NodesApi;
 import ch.cyberduck.core.sds.io.swagger.client.model.CopyNode;
@@ -59,14 +59,14 @@ public class SDSCopyFeature implements Copy {
     @Override
     public Path copy(final Path source, final Path target, final TransferStatus status, final ConnectionCallback callback, final StreamListener listener) throws BackgroundException {
         try {
-            new NodesApi(session.getClient()).copyNodes(
+            nodeid.retry(target.getParent(), () -> new NodesApi(session.getClient()).copyNodes(
                     new CopyNodesRequest()
                             .resolutionStrategy(CopyNodesRequest.ResolutionStrategyEnum.OVERWRITE)
                             .addItemsItem(new CopyNode().id(Long.parseLong(nodeid.getVersionId(source))))
-                            .keepShareLinks(new HostPreferences(session.getHost()).getBoolean("sds.upload.sharelinks.keep")),
+                            .keepShareLinks(HostPreferencesFactory.get(session.getHost()).getBoolean("sds.upload.sharelinks.keep")),
                     // Target Parent Node ID
                     Long.parseLong(nodeid.getVersionId(target.getParent())),
-                    StringUtils.EMPTY, null);
+                    StringUtils.EMPTY, null));
             listener.sent(status.getLength());
             nodeid.cache(target, null);
             final PathAttributes attributes = new SDSAttributesFinderFeature(session, nodeid).find(target);
